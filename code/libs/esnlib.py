@@ -1,25 +1,10 @@
-import os
-import pandas as pd
 import numpy as np
-from numba import jit
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.metrics import mean_squared_error
-
-
-@jit
-def getDataWindowed(data,inSize,outSize):
-    biggest = np.max([inSize,outSize])
-
-    matrixIn = np.zeros((len(data)-2*biggest, inSize))
-    matrixOut = np.zeros((len(data)-2*biggest, outSize))
-    for i in range(len(data)-2*biggest):
-        matrixIn[i,:] = data[i:i+inSize]
-        matrixOut[i,:] = data[i+inSize+1:i+inSize+outSize+1]
-    return matrixIn,matrixOut
+from sklearn.linear_model import Ridge
 
 class ESN(BaseEstimator,RegressorMixin):
     def __init__(self, n_reservoir = 1000, spectral_radius = 0.135, sparsity=0,
-                 leaking_rate=0.3, regularization=1, random_state = None, activation = np.tanh):
+                 leaking_rate=0.3, regularization=1, random_state = None, activation = np.tanh, ridge = Ridge(alpha=regularization)):
         self.n_inputs = None
         self.n_outputs = None
         self.n_reservoir = n_reservoir
@@ -36,6 +21,7 @@ class ESN(BaseEstimator,RegressorMixin):
                 self.random_state = random_state
         else:
             self.random_state = np.random.RandomState()
+        self.ridge = ridge
 
     def get_params(self,deep=True):
         params =  {'n_reservoir':self.n_reservoir,'spectral_radius':self.spectral_radius,  'sparsity':self.sparsity,
@@ -47,7 +33,6 @@ class ESN(BaseEstimator,RegressorMixin):
             params["random_state"] = self.random_state
         return params
 
-    @jit
     def fit(self,X,y):
         in_rows,self.n_inputs = X.shape
         if len(y.shape) > 1:
@@ -65,6 +50,7 @@ class ESN(BaseEstimator,RegressorMixin):
 
         #Creating input weights
         self.Win = (self.random_state.rand(self.n_reservoir,1+self.n_inputs)-0.5) * 1
+        # self.Win[self.random_state.rand(*self.Win.shape) < self.sparsity] = 0
 
         #Creating Reservoir weights
         self.W = self.random_state.rand(self.n_reservoir,self.n_reservoir)-0.5
@@ -74,7 +60,7 @@ class ESN(BaseEstimator,RegressorMixin):
         self.W *= self.spectral_radius
 
         #Creating state matrix
-        X_states = np.zeros((1+self.n_inputs+self.n_reservoir,N-initLen))
+        X_states = np.zeros((N-initLen,1+self.n_inputs+self.n_reservoir))
 
         #Last state
         self.last_state  = np.zeros(self.n_reservoir)
@@ -86,20 +72,17 @@ class ESN(BaseEstimator,RegressorMixin):
             self.last_state = (1-self.leaking_rate)*self.last_state  + self.leaking_rate*self.activation( np.dot( self.Win, np.hstack((1,u)) ) \
                                                                     + np.dot( self.W, self.last_state  ) )
             if t >= initLen:
-                X_states[:,t-initLen] = np.hstack((1,u,self.last_state ))
+                X_states[t-initLen,:] = np.hstack((1,u,self.last_state ))
 
 
-        Y_T = y[initLen:].T
-
-        X_sqrd = np.dot(X_states,X_states.T)+  self.regularization*np.eye(1+self.n_inputs+self.n_reservoir)
-        Y_sqrd = np.dot(Y_T,X_states.T)
+        Y = y[initLen:]
 
         #Getting the output weights using least squares
-        self.Wout=np.dot(Y_sqrd, np.linalg.inv(X_sqrd))
+        self.ridge.fit(X_states,Y)
 
         return self
 
-    @jit
+
     def predict(self,X, cont=False):
         Y = np.empty((len(X),self.n_outputs))
         if not cont:
@@ -109,7 +92,7 @@ class ESN(BaseEstimator,RegressorMixin):
         for t,u in enumerate(X):
                 last_state = (1 - self.leaking_rate) * last_state + self.leaking_rate*self.activation( np.dot( self.Win, np.hstack((1,u)))+ \
                                                                      + np.dot( self.W, last_state  ) )
-                y = np.dot(self.Wout, np.hstack((1,u,last_state)))
+                y = self.ridge.predict( np.hstack((1,u,last_state)).reshape(1,-1))
                 Y[t,:] = y
 
         if cont:
