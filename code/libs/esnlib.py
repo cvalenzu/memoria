@@ -1,10 +1,10 @@
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model import Ridge
-
+from cython_esn import _collect_states
 class ESN(BaseEstimator,RegressorMixin):
     def __init__(self, n_reservoir = 1000, spectral_radius = 0.135, sparsity=0,
-                 leaking_rate=0.3, regularization=1, random_state = None, activation = np.tanh, ridge = Ridge(alpha=regularization)):
+                 leaking_rate=0.3, regularization=1, random_state = None, activation = np.tanh):
         self.n_inputs = None
         self.n_outputs = None
         self.n_reservoir = n_reservoir
@@ -21,7 +21,7 @@ class ESN(BaseEstimator,RegressorMixin):
                 self.random_state = random_state
         else:
             self.random_state = np.random.RandomState()
-        self.ridge = ridge
+        self.ridge = Ridge(alpha=regularization)
 
     def get_params(self,deep=True):
         params =  {'n_reservoir':self.n_reservoir,'spectral_radius':self.spectral_radius,  'sparsity':self.sparsity,
@@ -59,24 +59,10 @@ class ESN(BaseEstimator,RegressorMixin):
         #Spectral radius
         self.W *= self.spectral_radius
 
-        #Creating state matrix
-        X_states = np.zeros((N-initLen,1+self.n_inputs+self.n_reservoir))
-
-        #Last state
-        self.last_state  = np.zeros(self.n_reservoir)
-
-        #Collecting states
-        for t in range(N):
-            u = X[t]
-            #Calculating new state
-            self.last_state = (1-self.leaking_rate)*self.last_state  + self.leaking_rate*self.activation( np.dot( self.Win, np.hstack((1,u)) ) \
-                                                                    + np.dot( self.W, self.last_state  ) )
-            if t >= initLen:
-                X_states[t-initLen,:] = np.hstack((1,u,self.last_state ))
-
+        X_states,self.last_state = _collect_states(X,self.activation,self.Win, self.W,self.leaking_rate, initLen, self.n_reservoir,self.n_inputs)
 
         Y = y[initLen:]
-
+        
         #Getting the output weights using least squares
         self.ridge.fit(X_states,Y)
 
