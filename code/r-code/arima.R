@@ -1,3 +1,5 @@
+library(forecast)
+
 data <- read.csv("../../data/potency/canela1.csv")
 data_len <- length(data[,2])
 train_len <- as.integer(0.8*data_len)
@@ -14,13 +16,14 @@ y_test  <- c()
 y_approx <- c()
 for(i in 1:(test_len-12)){
     print(paste("Training ",i))
-    model <-arima(data, order = params)
     p <- predict(model,n.ahead = 12)
-    
+
     y_approx <- rbind(y_approx, p$pred)
     y_test <- rbind(y_test,test[seq(i+1,i+12)])
     data <- c(data,test[i])
+    model <-arima(data, model = model)
+
 }
 
-write.csv(y_test,"calena1_y_test.csv", row.names= F)
+write.csv(y_test,"canela1_y_test.csv", row.names= F)
 write.csv(y_approx,"canela1_y_approx.csv", row.names=F)
