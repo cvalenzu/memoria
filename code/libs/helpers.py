@@ -11,3 +11,13 @@ def getDataWindowed(data,inSize,outSize):
         matrixIn[i,:] = data[i:i+inSize]
         matrixOut[i,:] = data[i+inSize+1:i+inSize+outSize+1]
     return matrixIn,matrixOut
+
+
+#Metrics
+def mape_score(y_test,y_pred):
+    error = np.abs((y_test - y_pred)/np.mean(y_test))
+    return np.average(error)
+
+def nmse_score(y_test,y_pred):
+    error = (y_test-y_pred)**2 / (np.mean(y_test)* np.mean(y_pred))
+    return np.average(error)
