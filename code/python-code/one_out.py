@@ -5,8 +5,7 @@ from helpers import *
 import pandas as pd
 import sklearn.metrics as metrics
 from scipy.special import expit
-import json
-
+import pickle
 from sklearn import preprocessing
 import sklearn.model_selection as ms
 import os
@@ -63,28 +62,37 @@ y_train = preproc_out.transform(y_train) if preproc_out else y_train
 #Metrics
 def scorer(estimator, X,y):
     y_pred = estimator.predict(X,cont=True)
-    return mape_score(y,y_pred)
+    n_steps = y.shape[1] if len(y.shape) > 1 else 1
+    if len(y.shape) <= 1:
+        N = len(y)
+        y = y.reshape((N,1))
+        y_pred = y_pred.reshape((N,1))
 
-def relu(x):
-    return x * (x > 0)
+    r2 = []
+    for i in range(n_steps):
+        r2.append(metrics.r2_score(y[:,i],y_pred[:,i]))
+    r2 = np.array(r2)
+    return r2.mean()
 
 print("Creating Param List")
 #PARAMS
-n_reservoir = 100
-sparsity = np.linspace(0.5,0.9,3)
-leaking_rate = np.linspace(0.3,0.9,3)
-regularization= [1e-8,1e-5,,1e-2]
-activation = [np.tanh,relu, expit]
-param_grid = {"n_reservoir":[n_reservoir], "sparsity":sparsity, "leaking_rate":leaking_rate, "regularization":regularization}
+n_reservoir = 1000
+sparsity = [0,0.5,0.9]#np.linspace(0.5,0.9,3)
+leaking_rate = [1,0.5,0.1]#np.linspace(0.3,0.9,3)
+regularization= [0,1e-5,1,2]#[1e-8,1e-5,1e-2]
+spectral_radius= [1e-8,0.1,1,2]#np.linspace(1e-5,1,3)
+activation = [np.tanh,expit]
+param_grid = {"n_reservoir":[n_reservoir], "sparsity":sparsity, "leaking_rate":leaking_rate, "regularization":regularization, "activation": activation, "spectral_radius":spectral_radius}
 params = ms.ParameterGrid(param_grid)
 
-with open('results/params.json', 'w') as fout:
-    json.dump(list(params), fout)
+with open('results/params.pkl', 'wb') as fout:
+    pickle.dump(list(params), fout)
 
 print("Evaluating Models")
 for i,param in enumerate(params):
     if i not in processed:
         clf = ESN(random_state=42, **param)
+        print(clf.get_params())
         score = ms.cross_val_score(clf,X_train,y_train, cv = tscv, n_jobs=-1,scoring=scorer)
         with open("results/process_index.csv","a+") as process_index:
             process_index.write("{}\n".format(i))

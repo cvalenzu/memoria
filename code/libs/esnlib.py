@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model import Ridge
 from cython_esn import _collect_states
+from numba import jit
 class ESN(BaseEstimator,RegressorMixin):
     def __init__(self, n_reservoir = 1000, spectral_radius = 0.135, sparsity=0,
                  leaking_rate=0.3, regularization=1, random_state = None, activation = np.tanh):
@@ -21,7 +22,7 @@ class ESN(BaseEstimator,RegressorMixin):
                 self.random_state = random_state
         else:
             self.random_state = np.random.RandomState()
-        self.ridge = Ridge(alpha=regularization)
+        self.ridge = Ridge(alpha=regularization, fit_intercept=False, tol=1e-8)
 
     def get_params(self,deep=True):
         params =  {'n_reservoir':self.n_reservoir,'spectral_radius':self.spectral_radius,  'sparsity':self.sparsity,
@@ -33,6 +34,7 @@ class ESN(BaseEstimator,RegressorMixin):
             params["random_state"] = self.random_state
         return params
 
+    @jit
     def fit(self,X,y):
         in_rows,self.n_inputs = X.shape
         if len(y.shape) > 1:
@@ -49,23 +51,35 @@ class ESN(BaseEstimator,RegressorMixin):
         N = in_rows
 
         #Creating input weights
-        self.Win = (self.random_state.rand(self.n_reservoir,1+self.n_inputs)-0.5) * 1
+        self.Win = self.random_state.uniform(-1,1,(self.n_reservoir,1+self.n_inputs))
         # self.Win[self.random_state.rand(*self.Win.shape) < self.sparsity] = 0
 
         #Creating Reservoir weights
-        self.W = self.random_state.rand(self.n_reservoir,self.n_reservoir)-0.5
+        self.W = self.random_state.uniform(-1,1,(self.n_reservoir,self.n_reservoir))
         #Sparsity
         self.W[self.random_state.rand(*self.W.shape) < self.sparsity] = 0
         #Spectral radius
         self.W *= self.spectral_radius
 
-        X_states,self.last_state = _collect_states(X,self.activation,self.Win, self.W,self.leaking_rate, initLen, self.n_reservoir,self.n_inputs)
+        # X_states,self.last_state = _collect_states(X,self.activation,self.Win, self.W,self.leaking_rate, initLen, self.n_reservoir,self.n_inputs)
+        #Creating state matrix
+        X_states = np.zeros((N-initLen,1+self.n_inputs+self.n_reservoir))
+
+        #Last state
+        self.last_state  = np.zeros(self.n_reservoir)
+
+        #Collecting states
+        for t in range(N):
+            u = X[t]
+            #Calculating new state
+            self.last_state = (1-self.leaking_rate)*self.last_state  + self.leaking_rate*self.activation( np.dot( self.Win, np.hstack((1,u)) ) \
+                                                                    + np.dot( self.W, self.last_state  ) )
+            if t >= initLen:
+                X_states[t-initLen,:] = np.hstack((1,u,self.last_state ))
 
         Y = y[initLen:]
-        
         #Getting the output weights using least squares
         self.ridge.fit(X_states,Y)
-
         return self
 
 
