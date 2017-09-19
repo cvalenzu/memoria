@@ -68,11 +68,11 @@ def scorer(estimator, X,y):
         y = y.reshape((N,1))
         y_pred = y_pred.reshape((N,1))
 
-    r2 = []
+    scores = []
     for i in range(n_steps):
-        r2.append(metrics.r2_score(y[:,i],y_pred[:,i]))
-    r2 = np.array(r2)
-    return r2.mean()
+        scores.append(metrics.mean_squared_error(y[:,i],y_pred[:,i]))
+    scores = np.array(scores)
+    return scores.mean()
 
 print("Creating Param List")
 #PARAMS
