@@ -32,7 +32,7 @@ def show_errors(y_test,y_pred):
         y_pred = y_pred.values
 
     if len(y_test.shape) > 1:
-        _, n_steps = y_test.shape[1]
+        _, n_steps = y_test.shape
     else:
         n_examples = len(y_test)
         n_steps = 1
