@@ -2,16 +2,36 @@ import numpy as np
 import pandas as pd
 from numba import jit
 import sklearn.metrics as sm
-
+#
+# @jit
+# def getDataWindowed(data,inSize,outSize):
+#     biggest = np.max([inSize,outSize])
+#
+#     matrixIn = np.zeros((len(data)-2*biggest, inSize))
+#     matrixOut = np.zeros((len(data)-2*biggest, outSize))
+#     for i in range(len(data)-2*biggest):
+#         matrixIn[i,:] = data[i:i+inSize]
+#         matrixOut[i,:] = data[i+inSize+1:i+inSize+outSize+1]
+#     return matrixIn,matrixOut
 @jit
 def getDataWindowed(data,inSize,outSize):
     biggest = np.max([inSize,outSize])
 
-    matrixIn = np.zeros((len(data)-2*biggest, inSize))
-    matrixOut = np.zeros((len(data)-2*biggest, outSize))
-    for i in range(len(data)-2*biggest):
-        matrixIn[i,:] = data[i:i+inSize]
-        matrixOut[i,:] = data[i+inSize+1:i+inSize+outSize+1]
+    if len(data.shape) > 1:
+        N, dims = data.shape
+    else:
+        N = len(data)
+        dims = 1
+
+    matrixIn = np.zeros((N-2*biggest, inSize*dims))
+    matrixOut = np.zeros((N-2*biggest, outSize))
+    for i in range(N-2*biggest):
+        if len(data.shape) > 1:
+            matrixIn[i,:] = data[i:i+inSize,:].flatten()
+            matrixOut[i,:] = data[i+inSize+1:i+inSize+outSize+1,0]
+        else:
+            matrixIn[i,:] = data[i:i+inSize]
+            matrixOut[i,:] = data[i+inSize+1:i+inSize+outSize+1]
     return matrixIn,matrixOut
 
 
