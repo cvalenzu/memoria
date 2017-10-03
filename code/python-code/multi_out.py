@@ -116,7 +116,7 @@ def process_input_steps(input_steps):
 
 process_list = []
 for input_steps in input_steps_list:
-# 	process_input_steps(input_steps)
-	process_list.append(Process(target=process_input_steps, args=(input_steps,)))
-[process.start() for process in process_list]
-[process.join() for process in process_list]
+ 	process_input_steps(input_steps)
+#	process_list.append(Process(target=process_input_steps, args=(input_steps,)))
+#[process.start() for process in process_list]
+#[process.join() for process in process_list]
