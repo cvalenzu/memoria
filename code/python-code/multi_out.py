@@ -10,7 +10,7 @@ from sklearn import preprocessing
 import sklearn.model_selection as ms
 import os
 
-os.makedirs("results_uni",exist_ok=True)
+os.makedirs("results",exist_ok=True)
 
 
 #Loading data
@@ -40,7 +40,7 @@ def scorer(estimator, X,y):
 
 def process_input_steps(input_steps):
 	print("Processing data with input_steps= {}".format(input_steps))
-	os.makedirs("results_uni/{}/trained".format(input_steps),exist_ok=True)
+	os.makedirs("results/{}/trained".format(input_steps),exist_ok=True)
 
 	X,y = getDataWindowed(data,input_steps,prediction_steps)
 
@@ -54,8 +54,8 @@ def process_input_steps(input_steps):
 	tscv = ms.TimeSeriesSplit(n_splits=n_splits)
 
 	#Reading processed ones
-	if os.path.exists("results_uni/{}/process_index.csv".format(input_steps)):
-		processed = np.loadtxt("results_uni/{}/process_index.csv".format(input_steps))
+	if os.path.exists("results/{}/process_index.csv".format(input_steps)):
+		processed = np.loadtxt("results/{}/process_index.csv".format(input_steps))
 	else:
 		processed = []
 
@@ -90,7 +90,7 @@ def process_input_steps(input_steps):
 	param_grid = {"n_reservoir":[n_reservoir], "sparsity":sparsity, "leaking_rate":leaking_rate, "regularization":regularization, "activation": activation, "spectral_radius":spectral_radius}
 	params = ms.ParameterGrid(param_grid)
 
-	with open('results_uni/{}/params.pkl'.format(input_steps), 'wb') as fout:
+	with open('results/{}/params.pkl'.format(input_steps), 'wb') as fout:
 		pickle.dump(list(params), fout)
 
 	print("Evaluating Models")
@@ -99,9 +99,9 @@ def process_input_steps(input_steps):
 			clf = ESN(random_state=42, **param)
 			print(clf.get_params())
 			score = ms.cross_val_score(clf,X_train,y_train, cv = tscv, n_jobs=-1,scoring=scorer)
-			with open("results_uni/{}/process_index.csv".format(input_steps),"a+") as process_index:
+			with open("results/{}/process_index.csv".format(input_steps),"a+") as process_index:
 				process_index.write("{}\n".format(i))
-				with open("results_uni/{}/scores.csv".format(input_steps), "a+") as scores_file:
+				with open("results/{}/scores.csv".format(input_steps), "a+") as scores_file:
 					scores_file.write('{},'.format(i)+','.join([str(num) for num in score]) + "\n")
 					scores_file.close()
 				process_index.close()
