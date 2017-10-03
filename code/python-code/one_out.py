@@ -15,7 +15,7 @@ os.makedirs("results/trained",exist_ok=True)
 
 #Loading data
 print("Reading Data")
-data = pd.Series.from_csv('../../data/potency/canela1.csv')
+data = pd.Series.from_csv('../../data/canela1.csv')
 
 #Data split parameters
 input_steps = 1

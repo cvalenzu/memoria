@@ -59,6 +59,7 @@ class ESN(BaseEstimator,RegressorMixin):
         #Sparsity
         self.W[self.random_state.rand(*self.W.shape) < self.sparsity] = 0
         #Spectral radius
+        self.W /= np.linalg.norm(self.W)
         self.W *= self.spectral_radius
 
         # X_states,self.last_state = _collect_states(X,self.activation,self.Win, self.W,self.leaking_rate, initLen, self.n_reservoir,self.n_inputs)
