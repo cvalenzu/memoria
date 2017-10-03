@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.linear_model import Ridge
-from cython_esn import _collect_states
+# from cython_esn import _collect_states
 from numba import jit
 class ESN(BaseEstimator,RegressorMixin):
     def __init__(self, n_reservoir = 1000, spectral_radius = 0.135, sparsity=0,
