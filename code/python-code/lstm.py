@@ -15,7 +15,7 @@ from esnlib import *
 
 # fix random seed for reproducibility
 numpy.random.seed(42)
-data = pd.read_csv("../../data/lota_r_filtered.csv")
+data = pd.read_csv("../../data/canela1_merged.csv")
 
 X,y=getDataWindowed(data.ws.as_matrix(),24,12)
 

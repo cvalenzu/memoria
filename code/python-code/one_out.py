@@ -104,5 +104,5 @@ for i,param in enumerate(params):
         clf.fit(X_train,y_train)
         y_pred = clf.predict(X_test)
         y_pred = preproc_out.inverse_transform(y_pred)
-        np.savetxt("results/trained/{}_y_pred.csv".format(i),y_pred)
-        np.savetxt("results/trained/{}_y_test.csv".format(i),y_test)
+        #np.savetxt("results/trained/{}_y_pred.csv".format(i),y_pred)
+        #np.savetxt("results/trained/{}_y_test.csv".format(i),y_test)
