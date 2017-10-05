@@ -9,13 +9,12 @@ import pickle
 from sklearn import preprocessing
 import sklearn.model_selection as ms
 import os
-os.makedirs("results",exist_ok=True)
-os.makedirs("results/trained",exist_ok=True)
+os.makedirs("results_one",exist_ok=True)
 
 
 #Loading data
 print("Reading Data")
-data = pd.Series.from_csv('../../data/canela1.csv')
+data = pd.read_csv('../../data/canela1_merged.csv',index_col=0).values
 
 #Data split parameters
 input_steps = 1
@@ -34,8 +33,8 @@ n_splits = 5
 tscv = ms.TimeSeriesSplit(n_splits=n_splits)
 
 #Reading processed ones
-if os.path.exists("results/process_index.csv"):
-    processed = np.loadtxt("results/process_index.csv")
+if os.path.exists("results_one/process_index.csv"):
+    processed = np.loadtxt("results_one/process_index.csv")
 else:
     processed = []
 
@@ -85,7 +84,7 @@ activation = [np.tanh,expit]
 param_grid = {"n_reservoir":[n_reservoir], "sparsity":sparsity, "leaking_rate":leaking_rate, "regularization":regularization, "activation": activation, "spectral_radius":spectral_radius}
 params = ms.ParameterGrid(param_grid)
 
-with open('results/params.pkl', 'wb') as fout:
+with open('results_one/params.pkl', 'wb') as fout:
     pickle.dump(list(params), fout)
 
 print("Evaluating Models")
@@ -94,9 +93,9 @@ for i,param in enumerate(params):
         clf = ESN(random_state=42, **param)
         print(clf.get_params())
         score = ms.cross_val_score(clf,X_train,y_train, cv = tscv, n_jobs=-1,scoring=scorer)
-        with open("results/process_index.csv","a+") as process_index:
+        with open("results_one/process_index.csv","a+") as process_index:
             process_index.write("{}\n".format(i))
-            with open("results/scores.csv", "a+") as scores_file:
+            with open("results_one/scores.csv", "a+") as scores_file:
                 scores_file.write('{},'.format(i)+','.join([str(num) for num in score]) + "\n")
                 scores_file.close()
             process_index.close()
@@ -104,5 +103,3 @@ for i,param in enumerate(params):
         clf.fit(X_train,y_train)
         y_pred = clf.predict(X_test)
         y_pred = preproc_out.inverse_transform(y_pred)
-        #np.savetxt("results/trained/{}_y_pred.csv".format(i),y_pred)
-        #np.savetxt("results/trained/{}_y_test.csv".format(i),y_test)

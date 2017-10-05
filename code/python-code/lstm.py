@@ -14,12 +14,12 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import LSTM
 
-os.makedirs("results_lstm",exist_ok=True)
+os.makedirs("results_lstm_uni",exist_ok=True)
 
 from esnlib import *
 
-n_epochs = 1
-n_splits = 2
+n_epochs = 10
+n_splits = 5
 
 def create_lstm(input_dim,nodes,loss='mean_squared_error',optimizer='adam'):
     model = Sequential()
@@ -30,7 +30,7 @@ def create_lstm(input_dim,nodes,loss='mean_squared_error',optimizer='adam'):
 
 #Loading data
 print("Reading Data")
-data = pd.read_csv('../../data/canela1_merged.csv',index_col=0).values
+data = pd.read_csv('../../data/canela1.csv',index_col=0).values
 
 #Data split parameters
 input_steps_list = [6,12,24,48,72]
@@ -39,7 +39,7 @@ train_perc = 0.8
 
 for input_steps in input_steps_list:
     print("Processing data with input_steps= {}".format(input_steps))
-    os.makedirs("results_lstm/{}".format(input_steps),exist_ok=True)
+    os.makedirs("results_lstm_uni/{}".format(input_steps),exist_ok=True)
     X,y=getDataWindowed(data,input_steps,prediction_steps)
     trainlen = int(train_perc*len(X))
     X_train,X_test = X[:trainlen], X[trainlen:]
@@ -51,8 +51,8 @@ for input_steps in input_steps_list:
     tscv = ms.TimeSeriesSplit(n_splits=n_splits)
 
     #Reading processed ones
-    if os.path.exists("results_lstm/{}/process_index.csv".format(input_steps)):
-        processed = np.loadtxt("results_lstm/{}/process_index.csv".format(input_steps))
+    if os.path.exists("results_lstm_uni/{}/process_index.csv".format(input_steps)):
+        processed = np.loadtxt("results_lstm_uni/{}/process_index.csv".format(input_steps))
     else:
         processed = []
 
@@ -84,7 +84,7 @@ for input_steps in input_steps_list:
     param_grid = {"nodes":lsm_nodes, "optimizer":optimizer, "loss":loss, "input_dim":input_dim}
     params = ms.ParameterGrid(param_grid)
 
-    with open('results_lstm/{}/params.pkl'.format(input_steps), 'wb') as fout:
+    with open('results_lstm_uni/{}/params.pkl'.format(input_steps), 'wb') as fout:
     	pickle.dump(list(params), fout)
 
     print("Evaluating Models")
@@ -104,9 +104,9 @@ for input_steps in input_steps_list:
                 y_approx = model.predict(X_val)
                 score = metrics.mean_squared_error(y_val,y_approx)
                 scores.append(score)
-            with open("results_lstm/{}/process_index.csv".format(input_steps),"a+") as process_index:
+            with open("results_lstm_uni/{}/process_index.csv".format(input_steps),"a+") as process_index:
                 process_index.write("{}\n".format(i))
-                with open("results_lstm/{}/scores.csv".format(input_steps), "a+") as scores_file:
+                with open("results_lstm_uni/{}/scores.csv".format(input_steps), "a+") as scores_file:
                     scores_file.write('{},'.format(i)+','.join([str(num) for num in scores]) + "\n")
                     scores_file.close()
                 process_index.close()
