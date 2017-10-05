@@ -32,5 +32,5 @@ for(i in 1:(test_len-12)){
 }
 name <- strsplit(basename(args[1]),".csv")
 
-write.csv(y_test,paste(name,"y_test.csv",sep="_"), row.names= F)
-write.csv(y_approx,paste(name,"y_approx.csv",sep="_"), row.names=F)
+write.csv(y_test,paste(name,p,q,d,"y_test.csv",sep="_"), row.names= F)
+write.csv(y_approx,paste(name,p,q,d,"y_approx.csv",sep="_"), row.names=F)
