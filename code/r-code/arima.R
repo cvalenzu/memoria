@@ -22,7 +22,7 @@ y_test  <- c()
 y_approx <- c()
 model <- Arima(data,order=params)
 for(i in 1:(test_len-12)){
-    print(paste("Training ",i))
+    #print(paste("Training ",i))
     p <- predict(model,n.ahead = 12)
 
     y_approx <- rbind(y_approx, p$pred)
@@ -32,5 +32,5 @@ for(i in 1:(test_len-12)){
 }
 name <- strsplit(basename(args[1]),".csv")
 
-write.csv(y_test,paste(name,p,q,d,"y_test.csv",sep="_"), row.names= F)
-write.csv(y_approx,paste(name,p,q,d,"y_approx.csv",sep="_"), row.names=F)
+write.csv(y_test,paste(name,as.numeric(args[2]),as.numeric(args[3]),as.numeric(args[4]),"y_test.csv",sep="_"), row.names= F)
+write.csv(y_approx,paste(name,as.numeric(args[2]),as.numeric(args[3]),as.numeric(args[4]),"y_approx.csv",sep="_"), row.names=F)
