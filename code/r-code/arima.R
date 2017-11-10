@@ -25,7 +25,10 @@ seasonal.params <- c(as.numeric(args[5]),as.numeric(args[6]),as.numeric(args[7])
 y_test  <- c()
 y_approx <- c()
 print(paste("Training Model with ","p:",as.numeric(args[2])," q:",as.numeric(args[3])," d:",as.numeric(args[4]), " P:",as.numeric(args[5])," Q:",as.numeric(args[6])," D:",as.numeric(args[7])))
+
+t0 <- proc.time()
 model <- Arima(data,order=params, seasonal=list(order=seasonal.params,period=12))
+time <- proc.time() - t0
 aic.model <- AIC(model)
 residuals.model <- residuals(model)
 
@@ -41,7 +44,7 @@ residuals.model <- residuals(model)
 #}
 print("Saving Data")
 name <- strsplit(basename(args[1]),".csv")
-p <- args[2] 
+p <- args[2]
 d <- args[3]
 q <- args[4]
 P <- args[5]
@@ -49,5 +52,6 @@ D <- args[6]
 Q <- args[7]
 write.csv(residuals.model,  paste(name,p,d,q,P,D,Q,"residuals.csv", sep="_"))
 write.csv(c(model$aic,model$aicc,model$bic), paste(name,p,d,q,P,D,Q, "aic.csv", sep="_"))
+write.csv(time, paste(name,p,d,q,P,D,Q, "time.csv", sep="_"))
 #write.csv(y_test,paste(name,p,d,q,P,D,Q,"y_test.csv",sep="_"), row.names= F)
 #write.csv(y_approx,paste(name,args[2],args[3], args[4],args[5],args[6],args[7],"y_approx.csv",sep="_"), row.names=F)

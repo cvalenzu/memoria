@@ -16,20 +16,23 @@ files=(Memoria/data/processed/x_potency_canela1_merged.csv Memoria/data/processe
 
 max_params=5
 max_diff=1
+d=1
 
 for file in ${files[@]}; do
-	for D in $(seq 0 0); do
+	for D in $(seq 0 $max_diff); do
   		for P in $(seq 0 $max_params); do
     			for Q in $(seq 0 $max_params); do
-				for d in $(seq 1 $max_diff); do
-					for p in $(seq 0 $max_params); do
-						for q in $(seq 0 $max_params); do
-								Rscript Memoria/code/r-code/arima.R $file $p $d $q $P $D $Q &
+#						for d in $(seq 1 $max_diff); do
+							for p in $(seq 0 $max_params); do
+								for q in $(seq 0 $max_params); do
+									if $(($p + $q < 4 && $P + $Q < 4)); then
+										Rscript Memoria/code/r-code/arima.R $file $p $d $q $P $D $Q &
+									fi
+								done
+#							done
 						done
-					done
-				done
-				wait
-   			done
+						wait
+   				done
   		done
 	done
 done
