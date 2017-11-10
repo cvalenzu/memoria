@@ -52,6 +52,6 @@ D <- args[6]
 Q <- args[7]
 write.csv(residuals.model,  paste(name,p,d,q,P,D,Q,"residuals.csv", sep="_"))
 write.csv(c(model$aic,model$aicc,model$bic), paste(name,p,d,q,P,D,Q, "aic.csv", sep="_"))
-write.csv(time, paste(name,p,d,q,P,D,Q, "time.csv", sep="_"))
+write.csv(time[3], paste(name,p,d,q,P,D,Q, "time.csv", sep="_"))
 #write.csv(y_test,paste(name,p,d,q,P,D,Q,"y_test.csv",sep="_"), row.names= F)
 #write.csv(y_approx,paste(name,args[2],args[3], args[4],args[5],args[6],args[7],"y_approx.csv",sep="_"), row.names=F)

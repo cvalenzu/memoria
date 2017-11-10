@@ -2,9 +2,7 @@
 #PBS -N arima-train
 #PBS -o train_arima_$PBS_JOBID.out
 #PBS -e train_arima_$PBS_JOBID.err
-#PBS -m bea
-#PBS -M camilo.valenzuela@alumnos.usm.cl
-#PBS -l walltime=64:00:00
+#PBS -l walltime=200:00:00
 
 #FILES
 #Memoria/data/processed/x_potency_canela1_merged.csv
@@ -25,8 +23,10 @@ for file in ${files[@]}; do
 #						for d in $(seq 1 $max_diff); do
 							for p in $(seq 0 $max_params); do
 								for q in $(seq 0 $max_params); do
-									if $(($p + $q < 4 && $P + $Q < 4)); then
+									if [ $(($p + $q)) -le 4 ]; then
+										if [ $(( $P + $Q)) -le 4  ]; then
 										Rscript Memoria/code/r-code/arima.R $file $p $d $q $P $D $Q &
+										fi
 									fi
 								done
 #							done

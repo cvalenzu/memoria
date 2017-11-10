@@ -1,7 +1,7 @@
 #!/bin/bash
-#PBS -N esn_training_one
-#PBS -o esn_one_$PBS_JOBID.out
-#PBS -e esn_one_$PBS_JOBID.err
+#PBS -N esn_training_multi
+#PBS -o esn_multi_$PBS_JOBID.out
+#PBS -e esn_multi_$PBS_JOBID.err
 #PBS -l walltime=200:00:00
 echo "Loading Anaconda"
 use gcc63 boost anaconda3

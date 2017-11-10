@@ -22,7 +22,6 @@ from esnlib import *
 from helpers import *
 import os
 
-
 def worker(args):
 	i,param, X_train,y_train,y_train_orig,preproc_out= args
 	print("training {}".format(i))
@@ -39,6 +38,7 @@ if __name__ == "__main__":
 
 	print("Reading Data")
 	#Data split parameters
+	filename = os.path.basename(args.path).split("_")[2]
 	X = pd.read_csv(args.path,index_col=0).values[:,:args.inputs]
 	y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0).values
 	trainlen = int(train_perc*len(X))
@@ -91,4 +91,4 @@ if __name__ == "__main__":
 
 	param_df = pd.DataFrame(list(params))
 	param_df["scores"] = scores
-	param_df.to_csv("scores_multi_{}lags.csv".format(args.inputs))
+	param_df.to_csv("{}_scores_multi_{}lags.csv".format(filename,args.inputs))
