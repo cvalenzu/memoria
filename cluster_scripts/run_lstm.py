@@ -1,12 +1,9 @@
 #!/bin/bash
 #PBS -N lstm-train
-#PBS -o lstm_arima.out
-#PBS -e lstm_arima.err
-#PBS -m bea
-#PBS -M camilo.valenzuela@alumnos.usm.cl
+#PBS -o lstm_train_$PBS_JOBID.out
+#PBS -e lstm_train_$PBS_JOBID.err
 #PBS -l walltime=64:00:00
-#PBS -q gpuk
 
-use anaconda3
+use gcc63 boost anaconda3
 cd Memoria/code/python-code/
 python lstm.py  
