@@ -1,105 +1,104 @@
+import argparse
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('path', help='File path')
+parser.add_argument('--inputs', default=1, help="Input Values", type=int)
+parser.add_argument('--preprocess', default="minmax", help="minmax or standarization")
+args = parser.parse_args()
+
+#IMPORTS
+import pandas as pd
+import numpy as np
+from sklearn import preprocessing
+import sklearn.model_selection as ms
+import sklearn.metrics as metrics
+import multiprocessing as mp
+
+import pickle
+
 import sys
 sys.path.append('../libs')
 from esnlib import *
 from helpers import *
-import pandas as pd
-import sklearn.metrics as metrics
-from scipy.special import expit
-import pickle
-from sklearn import preprocessing
-import sklearn.model_selection as ms
 import os
-os.makedirs("results_one",exist_ok=True)
 
 
-#Loading data
-print("Reading Data")
-data = pd.read_csv('../../data/canela1_merged.csv',index_col=0).values
+def worker(args):
+    i,param, X_train,y_train,y_train_orig,preproc_out= args
+    print("training {}".format(i))
+    clf = ESN(random_state=42, **param)
+    clf.fit(X_train,y_train)
+    y_pred = clf.predict(X_train)
+    y_pred = preproc_out.inverse_transform(y_pred)
+    score = metrics.mean_squared_error(y_train_orig,y_pred)
+    return score
 
-#Data split parameters
-input_steps = 1
-prediction_steps = 1
-train_perc = 0.8
+if __name__ == "__main__":
+    output_folder = "results_one/"+str(args.inputs)+"/"
+    os.makedirs(output_folder,exist_ok=True)
 
-X,y = getDataWindowed(data,input_steps,prediction_steps)
+    scores_file = output_folder+"scores.csv"
 
-trainlen = int(train_perc*len(X))
-X_train,X_test = X[:trainlen], X[trainlen:]
-y_train,y_test = y[:trainlen], y[trainlen:]
-
-#Creating Time Series Validation Folds
-print("Creating Folds")
-n_splits = 5
-tscv = ms.TimeSeriesSplit(n_splits=n_splits)
-
-#Reading processed ones
-if os.path.exists("results_one/process_index.csv"):
-    processed = np.loadtxt("results_one/process_index.csv")
-else:
-    processed = []
-
-#Preprocess data
-print("Preprocessing Data")
-minmax_in = preprocessing.MinMaxScaler(feature_range=(0,1))
-minmax_out = preprocessing.MinMaxScaler(feature_range=(0,1))
-standarization_in = preprocessing.StandardScaler()
-standarization_out = preprocessing.StandardScaler()
-
-minmax_in.fit(X_train)
-minmax_out.fit(y_train)
-standarization_in.fit(X_train)
-standarization_out.fit(X_train)
-preproc_in = minmax_in
-preproc_out = minmax_out
-
-X_train = preproc_in.transform(X_train) if preproc_in else X_train
-X_test = preproc_in.transform(X_test) if preproc_in else X_test
-
-y_train = preproc_out.transform(y_train) if preproc_out else y_train
+    prediction_steps = 1
+    train_perc = 0.8
 
 
-#Metrics
-def scorer(estimator, X,y):
-    y_pred = estimator.predict(X,cont=True)
-    n_steps = y.shape[1] if len(y.shape) > 1 else 1
-    if len(y.shape) <= 1:
-        N = len(y)
-        y = y.reshape((N,1))
-        y_pred = y_pred.reshape((N,1))
+    print("Reading Data")
+    #Data split parameters
+    X = pd.read_csv(args.path,index_col=0).values[:,:args.inputs]
+    y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0).values[:,0].reshape(-1,1)
+    trainlen = int(train_perc*len(X))
+    X_train,X_test = X[:trainlen], X[trainlen:]
+    y_train,y_test = y[:trainlen], y[trainlen:]
+    y_train_orig  = y_train
+    print("Preprocessing Data")
 
-    scores = []
-    for i in range(n_steps):
-        scores.append(metrics.mean_squared_error(y[:,i],y_pred[:,i]))
-    scores = np.array(scores)
-    return scores.mean()
+    if args.preprocess == "minmax":
+        minmax_in = preprocessing.MinMaxScaler(feature_range=(0,1))
+        minmax_out = preprocessing.MinMaxScaler(feature_range=(0,1))
 
-print("Creating Param List")
-#PARAMS
-n_reservoir = 1000
-sparsity = [0,0.5,0.9]#np.linspace(0.5,0.9,3)
-leaking_rate = [1,0.5,0.1]#np.linspace(0.3,0.9,3)
-regularization= [0,1e-5,1,2]#[1e-8,1e-5,1e-2]
-spectral_radius= [1e-8,0.1,1,2]#np.linspace(1e-5,1,3)
-activation = [np.tanh,expit]
-param_grid = {"n_reservoir":[n_reservoir], "sparsity":sparsity, "leaking_rate":leaking_rate, "regularization":regularization, "activation": activation, "spectral_radius":spectral_radius}
-params = ms.ParameterGrid(param_grid)
+        minmax_in.fit(X_train)
+        minmax_out.fit(y_train)
 
-with open('results_one/params.pkl', 'wb') as fout:
-    pickle.dump(list(params), fout)
+        preproc_in = minmax_in
+        preproc_out = minmax_out
 
-print("Evaluating Models")
-for i,param in enumerate(params):
-    if i not in processed:
-        clf = ESN(random_state=42, **param)
-        print(clf.get_params())
-        score = ms.cross_val_score(clf,X_train,y_train, cv = tscv, n_jobs=-1,scoring=scorer)
-        with open("results_one/process_index.csv","a+") as process_index:
-            process_index.write("{}\n".format(i))
-            with open("results_one/scores.csv", "a+") as scores_file:
-                scores_file.write('{},'.format(i)+','.join([str(num) for num in score]) + "\n")
-                scores_file.close()
-            process_index.close()
+    else:
+        standarization_in = preprocessing.StandardScaler()
+        standarization_out = preprocessing.StandardScaler()
 
-        clf.fit(X_train,y_train)
-        y_pred = clf.predict(X_test)
-        y_pred = preproc_out.inverse_transform(y_pred)
+        standarization_in.fit(X_train)
+        standarization_out.fit(y_train)
+
+        preproc_in = standarization_in
+        preproc_out = standarization_out
+
+    X_train = preproc_in.transform(X_train) if preproc_in else X_train
+    X_test = preproc_in.transform(X_test) if preproc_in else X_test
+    y_train = preproc_out.transform(y_train) if preproc_out else y_train
+
+    print("Creating Param List")
+    n_reservoir = 100
+    n_params= 6
+    sparsity = [0.2,0.5,0.9]
+    leaking_rate = np.linspace(0.3,0.9,5)
+    regularization= np.logspace(4,-4,base=10,num=n_params)
+    spectral_radius= np.logspace(-5,0,base=10,num=n_params)
+    param_grid = {"n_reservoir":[n_reservoir], "sparsity":sparsity, "leaking_rate":leaking_rate, "regularization":regularization, "spectral_radius":spectral_radius}
+    params = ms.ParameterGrid(param_grid)
+
+
+
+
+    print("Evaluating Models")
+    param_list = []
+    for i,param in enumerate(params):
+        param_list.append((i,param, X_train,y_train,y_train_orig,preproc_out))
+
+    pool = mp.Pool(mp.cpu_count())
+    scores = pool.map(worker,param_list)
+
+
+    param_df = pd.DataFrame(list(params)[:6])
+    param_df["scores"] = scores
+    param_df.to_csv("scores_{}lags.csv".format(args.inputs))
