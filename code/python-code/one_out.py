@@ -101,4 +101,4 @@ if __name__ == "__main__":
 
     param_df = pd.DataFrame(list(params)[:6])
     param_df["scores"] = scores
-    param_df.to_csv("scores_{}lags.csv".format(args.inputs))
+    param_df.to_csv("scores_one_{}lags.csv".format(args.inputs))
