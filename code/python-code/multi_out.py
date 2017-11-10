@@ -34,11 +34,6 @@ def worker(args):
 	return score
 
 if __name__ == "__main__":
-	output_folder = "results_multi/"+str(args.inputs)+"/"
-	os.makedirs(output_folder,exist_ok=True)
-
-	scores_file = output_folder+"scores.csv"
-
 	train_perc = 0.8
 
 

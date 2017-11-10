@@ -34,12 +34,6 @@ def worker(args):
     return score
 
 if __name__ == "__main__":
-    output_folder = "results_one/"+str(args.inputs)+"/"
-    os.makedirs(output_folder,exist_ok=True)
-
-    scores_file = output_folder+"scores.csv"
-
-    prediction_steps = 1
     train_perc = 0.8
 
 
@@ -99,6 +93,6 @@ if __name__ == "__main__":
     scores = pool.map(worker,param_list)
 
 
-    param_df = pd.DataFrame(list(params)[:6])
+    param_df = pd.DataFrame(list(params))
     param_df["scores"] = scores
     param_df.to_csv("scores_one_{}lags.csv".format(args.inputs))
