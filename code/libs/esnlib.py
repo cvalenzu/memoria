@@ -99,3 +99,25 @@ class ESN(BaseEstimator,RegressorMixin):
         if cont:
             self.last_state = last_state
         return Y
+
+    def n_predict(self,X, n = 12, cont=False):
+        Y = np.empty((len(X),n))
+        if not cont:
+            last_state = np.zeros_like(self.last_state)
+        else:
+            last_state = self.last_state
+        for t,u in enumerate(X):
+
+            for i in range(n):
+                last_state = (1 - self.leaking_rate) * last_state + self.leaking_rate*self.activation( np.dot( self.Win, np.hstack((1,u)))+ \
+                                                                     + np.dot( self.W, last_state  ) )
+                y = self.ridge.predict( np.hstack((1,u,last_state)).reshape(1,-1))
+                Y[t,i] = y
+                if i == 0:
+                    save_last = last_state
+                if i == n-1:
+                    last_state = save_last 
+
+        if cont:
+            self.last_state = last_state
+        return Y
