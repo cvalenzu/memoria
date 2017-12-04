@@ -55,7 +55,7 @@ for(i in 1:(test_len-12)){
 
     data <- c(data,test[i])
     model <-Arima(data, model = model)
-    break
+#    break
 }
 
 name <- strsplit(basename(args[1]),".csv")

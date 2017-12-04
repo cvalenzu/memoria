@@ -24,13 +24,16 @@ import os
 
 
 def worker(args):
-    i,param, X_train,y_train,y_train_orig,preproc_out= args
+    i,param, X_train,y_train,y_train_orig,y_train_multi,preproc_out= args
     print("training {}".format(i))
     clf = ESN(random_state=42, **param)
     clf.fit(X_train,y_train)
-    y_pred = clf.predict(X_train)
+    y_pred = clf.n_predict(X_train)
     y_pred = preproc_out.inverse_transform(y_pred)
-    score = metrics.mean_squared_error(y_train_orig,y_pred)
+    for i in range(12):
+        y_pred[:,i] = preproc_out.inverse_transform(y_pred[:,i].reshape(-1,1)).reshape((-1))
+    
+    score = metrics.mean_squared_error(y_train_multi,y_pred)
     return score
 
 if __name__ == "__main__":
@@ -42,9 +45,11 @@ if __name__ == "__main__":
     filename = os.path.basename(args.path).split("_")[2]
     X = pd.read_csv(args.path,index_col=0).values[:,:args.inputs]
     y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0).values[:,0].reshape(-1,1)
+    y_multi = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0).values
     trainlen = int(train_perc*len(X))
     X_train,X_test = X[:trainlen], X[trainlen:]
     y_train,y_test = y[:trainlen], y[trainlen:]
+    y_train_multi, y_test_multi = y_multi[:trainlen], y_multi[trainlen:]
     y_train_orig  = y_train
     print("Preprocessing Data")
 
@@ -88,7 +93,7 @@ if __name__ == "__main__":
     print("Evaluating Models")
     param_list = []
     for i,param in enumerate(params):
-        param_list.append((i,param, X_train,y_train,y_train_orig,preproc_out))
+        param_list.append((i,param, X_train,y_train,y_train_orig,y_train_multi,preproc_out))
 
     pool = mp.Pool(mp.cpu_count())
     scores = pool.map(worker,param_list)

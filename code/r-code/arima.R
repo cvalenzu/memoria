@@ -32,16 +32,6 @@ time <- proc.time() - t0
 aic.model <- AIC(model)
 residuals.model <- residuals(model)
 
-#print("Forecasting testing set")
-#for(i in 1:(test_len-12)){
-#    print(paste("Training ",i))
-#    p <- predict(model,n.ahead = 12)
-#
-#    y_approx <- rbind(y_approx, p$pred)
-#    y_test <- rbind(y_test,test[seq(i+1,i+12)])
-#    data <- c(data,test[i])
-#    model <-Arima(data, model = model)
-#}
 print("Saving Data")
 name <- strsplit(basename(args[1]),".csv")
 p <- args[2]
@@ -53,5 +43,3 @@ Q <- args[7]
 write.csv(residuals.model,  paste(name,p,d,q,P,D,Q,"residuals.csv", sep="_"))
 write.csv(c(model$aic,model$aicc,model$bic), paste(name,p,d,q,P,D,Q, "aic.csv", sep="_"))
 write.csv(time[3], paste(name,p,d,q,P,D,Q, "time.csv", sep="_"))
-#write.csv(y_test,paste(name,p,d,q,P,D,Q,"y_test.csv",sep="_"), row.names= F)
-#write.csv(y_approx,paste(name,args[2],args[3], args[4],args[5],args[6],args[7],"y_approx.csv",sep="_"), row.names=F)

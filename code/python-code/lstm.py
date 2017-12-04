@@ -43,7 +43,8 @@ if __name__ == "__main__":
     if args.outputs == 1:
         y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0).values[:,0].reshape((-1,1))
     else:
-        y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0)[:,args.output].values.reshape((-1,1))
+        y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0)[:,args.outputs].values.reshape((-1,1))
+
 
     trainlen = int(train_perc*len(X))
     X_train,X_test = X[:trainlen], X[trainlen:]
