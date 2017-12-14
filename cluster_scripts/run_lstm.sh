@@ -6,18 +6,17 @@
 
 use gcc63 boost anaconda3
 
-files=(../../data/processed/x_potency_canela1_merged.csv ../../data/processed/x_potency_monte_redondo_merged.csv ../../data/processed/x_potency_totoral_merged.csv)
+files=(../../data/windowed/X_canela1.csv ../../data/windowed/X_monte.csv ../../data/windowed/X_totoral.csv)
 
-lags=(1 6 12 24)
-outputs=(1 12)
+lags=(6 12 24)
+outputs=(12)
 
 cd Memoria/code/python-code/
 for file in ${files[@]};do
   echo "Processing $file"
   for output in ${outputs[@]}; do
     for lag in ${lags[@]};do
-      python lstm.py  $file --inputs $lag --outputs $output --epochs 100
+      python lstm.py  $file --inputs $lag --outputs $output --epochs 10
     done
   done
 done
-python

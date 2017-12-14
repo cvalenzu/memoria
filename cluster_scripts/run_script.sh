@@ -8,7 +8,7 @@ use gcc63 boost anaconda3
 echo "Running Script"
 cd Memoria/code/python-code
 
-files=(../../data/processed/x_potency_canela1_merged.csv ../../data/processed/x_potency_monte_redondo_merged.csv ../../data/processed/x_potency_totoral_merged.csv)
+files=(../../data/windowed/X_canela1.csv ../../data/windowed/X_monte.csv ../../data/windowed/X_totoral.csv)
 
 lags=(1 6 12 24)
 for file in ${files[@]};do
