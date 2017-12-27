@@ -38,9 +38,9 @@ if __name__ == "__main__":
 
 	print("Reading Data")
 	#Data split parameters
-	filename = os.path.basename(args.path).split("_")[2]
+	filename = os.path.basename(args.path).split("_")[1].replace(".csv","")
 	X = pd.read_csv(args.path,index_col=0).values[:,:args.inputs]
-	y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0).values
+	y = pd.read_csv(args.path.replace("X", "y"), index_col=0).values
 	trainlen = int(train_perc*len(X))
 	X_train,X_test = X[:trainlen], X[trainlen:]
 	y_train,y_test = y[:trainlen], y[trainlen:]
@@ -91,4 +91,4 @@ if __name__ == "__main__":
 
 	param_df = pd.DataFrame(list(params))
 	param_df["scores"] = scores
-	param_df.to_csv("{}_scores_multi_{}lags.csv".format(filename,args.inputs))
+	param_df.to_csv("{}_esn_scores_multi_{}lags.csv".format(filename,args.inputs))

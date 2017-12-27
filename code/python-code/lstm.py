@@ -38,12 +38,12 @@ if __name__ == "__main__":
     train_perc = 0.8
     print("Reading Data")
     #Data split parameters
-    filename = os.path.basename(args.path).split("_")[2]
+    filename = os.path.basename(args.path).split("_")[1].replace(".csv","")
     X = pd.read_csv(args.path,index_col=0).values[:,:args.inputs]
     if args.outputs == 1:
-        y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0).values[:,0].reshape((-1,1))
+        y = pd.read_csv(args.path.replace("X", "y"), index_col=0).values[:,0].reshape((-1,1))
     else:
-        y = pd.read_csv(args.path.replace("x_potency", "y"), index_col=0)[:,args.outputs].values.reshape((-1,1))
+        y = pd.read_csv(args.path.replace("X", "y"), index_col=0).values#[:,args.outputs-1]
 
 
     trainlen = int(train_perc*len(X))
