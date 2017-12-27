@@ -1,0 +1,5 @@
+,input_dim,loss,nodes,output_dim,score
+0,6,mean_squared_error,5,12,0.024715573999710302
+1,6,mean_squared_error,10,12,0.02469780392648185
+2,6,mean_squared_error,15,12,0.024675277467699836
+3,6,mean_squared_error,20,12,0.02463118837382661

@@ -1,0 +1,4 @@
+,input_dim,loss,nodes,output_dim,score,source,lags
+3,12,mean_squared_error,20,12,0.02289887394362705,canela1,12
+3,6,mean_squared_error,20,12,0.02463118837382661,canela1,6
+3,24,mean_squared_error,20,12,0.020924808838079033,canela1,24
