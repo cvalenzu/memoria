@@ -23,14 +23,14 @@ from helpers import *
 import os
 
 def worker(args):
-	i,param, X_train,y_train,y_train_orig,preproc_out= args
-	print("training {}".format(i))
-	clf = ESN(random_state=42, **param)
-	clf.fit(X_train,y_train)
-	y_pred = clf.predict(X_train)
-	y_pred = preproc_out.inverse_transform(y_pred)
-	score = metrics.mean_squared_error(y_train_orig,y_pred)
-	return score
+    i,param, X_train,y_train,y_train_orig,X_test,y_test,preproc_out= args
+    print("training {}".format(i))
+    clf = ESN(random_state=42, **param)
+    clf.fit(X_train,y_train)
+    y_pred = clf.predict(X_test,cont=True)
+    y_pred = preproc_out.inverse_transform(y_pred)
+    score = metrics.mean_squared_error(y_test,y_pred)
+    return score
 
 if __name__ == "__main__":
 	train_perc = 0.8
@@ -42,14 +42,15 @@ if __name__ == "__main__":
 	X = pd.read_csv(args.path,index_col=0).values[:,:args.inputs]
 	y = pd.read_csv(args.path.replace("X", "y"), index_col=0).values
 	trainlen = int(train_perc*len(X))
-	X_train,X_test = X[:trainlen], X[trainlen:]
-	y_train,y_test = y[:trainlen], y[trainlen:]
+	vallen = int(train_perc*trainlen)
+	X_train,X_test = X[:vallen], X[vallen:trainlen]
+	y_train,y_test = y[:vallen], y[vallen:trainlen]
 	y_train_orig  = y_train
 	print("Preprocessing Data")
 
 	if args.preprocess == "minmax":
-		minmax_in = preprocessing.MinMaxScaler(feature_range=(0,1))
-		minmax_out = preprocessing.MinMaxScaler(feature_range=(0,1))
+		minmax_in = preprocessing.MinMaxScaler(feature_range=(-1,1))
+		minmax_out = preprocessing.MinMaxScaler(feature_range=(-1,1))
 
 		minmax_in.fit(X_train)
 		minmax_out.fit(y_train)
@@ -78,17 +79,19 @@ if __name__ == "__main__":
 	leaking_rate = np.linspace(0.3,0.9,5)
 	regularization= np.logspace(4,-4,base=10,num=n_params)
 	spectral_radius= np.logspace(-5,0,base=10,num=n_params)
-	param_grid = {"n_reservoir":[n_reservoir], "sparsity":sparsity, "leaking_rate":leaking_rate, "regularization":regularization, "spectral_radius":spectral_radius}
+	activation = ["tanh","sigmoid", "relu"]
+	param_grid = {"activation":activation,"n_reservoir":[n_reservoir], "sparsity":sparsity, "leaking_rate":leaking_rate, "regularization":regularization, "spectral_radius":spectral_radius}
 	params = ms.ParameterGrid(param_grid)
+
 
 	print("Evaluating Models")
 	param_list = []
 	for i,param in enumerate(params):
-		param_list.append((i,param, X_train,y_train,y_train_orig,preproc_out))
+		param_list.append((i,param, X_train,y_train,y_train_orig,X_test,y_test,preproc_out))
 	pool = mp.Pool(mp.cpu_count())
 	scores = pool.map(worker,param_list)
 
 
 	param_df = pd.DataFrame(list(params))
 	param_df["scores"] = scores
-	param_df.to_csv("{}_esn_scores_multi_{}lags.csv".format(filename,args.inputs))
+	param_df.to_csv("{}_esn_scores_multi_{}lags_{}preproc.csv".format(filename,args.inputs, args.preprocess))

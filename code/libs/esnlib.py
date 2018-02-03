@@ -5,7 +5,7 @@ from sklearn.linear_model import Ridge
 from numba import jit
 class ESN(BaseEstimator,RegressorMixin):
     def __init__(self, n_reservoir = 1000, spectral_radius = 0.135, sparsity=0,
-                 leaking_rate=0.3, regularization=1, random_state = None, activation = np.tanh):
+                 leaking_rate=0.3, regularization=1, random_state = None, activation = "tanh"):
         self.n_inputs = None
         self.n_outputs = None
         self.n_reservoir = n_reservoir
@@ -14,7 +14,13 @@ class ESN(BaseEstimator,RegressorMixin):
         self.leaking_rate = leaking_rate
         self.regularization = regularization
         self.last_state = None
-        self.activation = activation
+        if activation == "tanh":
+            self.activation = np.tanh
+        elif activation == "sigmoid":
+            self.activation = lambda x: 1/(1+np.exp(-1))
+        elif activation == "relu":
+            self.activation = lambda x: np.maximum(0,x)
+
         if random_state:
             if type(random_state) is int:
                 self.random_state=np.random.RandomState(random_state)
@@ -52,14 +58,14 @@ class ESN(BaseEstimator,RegressorMixin):
 
         #Creating input weights
         self.Win = self.random_state.uniform(-1,1,(self.n_reservoir,1+self.n_inputs))
-        # self.Win[self.random_state.rand(*self.Win.shape) < self.sparsity] = 0
 
         #Creating Reservoir weights
         self.W = self.random_state.uniform(-1,1,(self.n_reservoir,self.n_reservoir))
         #Sparsity
         self.W[self.random_state.rand(*self.W.shape) < self.sparsity] = 0
         #Spectral radius
-        self.W /= np.linalg.norm(self.W)
+        spectral_radius = np.max(np.absolute(np.linalg.eigvals(self.W)))
+        self.W /= spectral_radius
         self.W *= self.spectral_radius
 
         # X_states,self.last_state = _collect_states(X,self.activation,self.Win, self.W,self.leaking_rate, initLen, self.n_reservoir,self.n_inputs)
@@ -115,9 +121,7 @@ class ESN(BaseEstimator,RegressorMixin):
                 Y[t,i] = y
                 if i == 0:
                     save_last = last_state
-                if i == n-1:
-                    last_state = save_last 
-
+            last_state = save_last
         if cont:
             self.last_state = last_state
         return Y
